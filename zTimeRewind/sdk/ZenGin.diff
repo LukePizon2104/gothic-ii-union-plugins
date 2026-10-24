@@ -1,0 +1,1131 @@
+--- a/Gothic_I_Addon/API/oNpc.h
++++ b/Gothic_I_Addon/API/oNpc.h
+@@ -389,7 +389,7 @@
+       oSActionBlock myactions[FA_MAX_SITUATIONS]; // sizeof 1DCh   offset 00h
+ 
+       oSFightAI() {}
+-    } oCNpc::oSFightAI;
++    } oSFightAI;
+ 
+     // sizeof CCh
+     typedef struct oSDamageDescriptor {
+--- a/Gothic_I_Addon/API/zAlgebra.h
++++ b/Gothic_I_Addon/API/zAlgebra.h
+@@ -57,6 +57,9 @@
+     ES
+   };
+ 
++  inline zMAT3 Alg_Scaling2D(zVEC2&);
++  inline zMAT3 Alg_Rotation2D(zVEC2&, float);
++
+   class zVEC2 {
+   public:
+     float n[2];
+@@ -697,7 +700,8 @@
+       float a = v[1][0] * v[1][0];
+       float b = v[1][1] * v[1][1];
+       float angle = atan( SafeDiv( a, b ) );
+-      return Alg_Rotation2D( zVEC2( 0.0f ), angle * DEGREE );
++      zVEC2 zeroVec{ 0.f };
++      return Alg_Rotation2D(zeroVec, angle * DEGREE );
+     }
+ 
+     float ExtractAngle() const {
+@@ -1416,8 +1420,8 @@
+         zCLine2D line3 = line2.Dot( vx_multiplier );
+ 
+         float vy_mid = line3[VB][VY];
+-        float vy_min = min( line1[VA][VY], line1[VB][VY] );
+-        float vy_max = max( line1[VA][VY], line1[VB][VY] );
++        float vy_min = std::min( line1[VA][VY], line1[VB][VY] );
++        float vy_max = std::max( line1[VA][VY], line1[VB][VY] );
+ 
+         if( vy_mid >= vy_min && vy_mid <= vy_max ) {
+           if( intersec )
+--- a/Gothic_I_Addon/API/zContainer.h
++++ b/Gothic_I_Addon/API/zContainer.h
+@@ -4,6 +4,8 @@
+ #define __ZCONTAINER_H__VER1__
+ 
+ namespace Gothic_I_Addon {
++	extern zCMallocGeneric* zmalloc;
++
+   const int zARRAY_START_ALLOC = 16;
+   template <class T>
+   class zCArray {
+--- a/Gothic_I_Addon/API/zEngine.h
++++ b/Gothic_I_Addon/API/zEngine.h
+@@ -66,7 +66,7 @@
+ #if True
+   #ifdef __ZCON_B_VER1__
+     #define __Z2D_B_VER1__
+-    #include "zview.h"
++    #include "zView.h"
+     #include "zViewObject.h"
+     #include "zViewDraw.h"
+     #include "zViewFx.h"
+@@ -89,7 +89,7 @@
+     #include "oViewDialogItemContainer.h"
+     #include "oViewDialogStealContainer.h"
+     #include "oViewDialogTrade.h"
+-    #include "oViewStatusBar.h"
++    #include "oViewStatusbar.h"
+     #include "oDoc.h"
+     #include "oDocumentManager.h"
+     #include "oHelp.h"
+@@ -147,7 +147,7 @@
+     #include "zProgMesh.h"
+     #include "zVertexTransform.h"
+     #include "zPolyPool.h"
+-    #include "oVisFX.h"
++    #include "oVisFx.h"
+     #include "oVisFx_MultiTarget.h"
+     #include "oMagic.h"
+     #include "oMagFrontier.h"
+@@ -159,10 +159,10 @@
+ #if True
+   #ifdef __ZWLD_B_VER1__
+     #define __ZAI_B_VER1__
+-    #include "zAIPlayer.h"
++    #include "zAiPlayer.h"
+     #include "zPhysics.h"
+     #include "zMoving.h"
+-    #include "oAIShoot.h"
++    #include "oAiShoot.h"
+     #include "oDialog.h"
+     #include "oItemReact.h"
+     #include "oFocus.h"
+@@ -244,8 +244,8 @@
+   #ifdef __ZWLD_B_VER1__
+     #define __ZCS_B_VER1__
+     #include "zCCsPool.h"
+-    #include "oCSPlayer.h"
+-    #include "oCSManager.h"
++    #include "oCsPlayer.h"
++    #include "oCsManager.h"
+     #include "oCsProps.h"
+     #include "oCsTrigger.h"
+     #include "oTrigger.h"
+--- a/Gothic_I_Addon/API/zList.h
++++ b/Gothic_I_Addon/API/zList.h
+@@ -598,7 +598,7 @@
+       int iIndex = static_cast<int> ( u32Hash );
+ 
+       if( TRUE == this->m_arrNodes.IsEmpty() )
+-        return GEFalse;
++        return False;
+ 
+       zSNode* pNode = this->m_arrNodes[iIndex];
+ 
+--- a/Gothic_I_Addon/API/zMacro.h
++++ b/Gothic_I_Addon/API/zMacro.h
+@@ -112,23 +112,23 @@
+   // class declaration for gothic api zobject classes
+ #define zCLASS_DECLARATION( className )                               \
+   static zCClassDef* classDef;                                        \
+-  void* className::operator new( size_t size ) {                      \
++  void* operator new( size_t size ) {                      \
+     void* mem = ::operator new( size );                               \
+   zCClassDef::ObjectCreated( (zCObject*)mem, className::classDef );   \
+   return mem;                                                         \
+   };                                                                  \
+-  void className::operator delete( void* mem ) {                      \
++  void operator delete( void* mem ) {                      \
+     zCClassDef::ObjectDeleted( (zCObject*)mem, className::classDef ); \
+     ::operator delete( mem );                                         \
+   };
+ 
+   // class declaration for union zobject classes
+ #define zCLASS_UNION_DECLARATION( className )                \
+-  static zCClassDef* className::classDef;                    \
+-  static zCObject* className::_CreateNewInstance( void );    \
+-  virtual zCClassDef* className::_GetClassDef( void ) const; \
+-  void* className::operator new(size_t size);                \
+-  void className::operator delete(void* mem);
++  static zCClassDef* classDef;                    \
++  static zCObject* _CreateNewInstance( void );    \
++  virtual zCClassDef* _GetClassDef( void ) const; \
++  void* operator new(size_t size);                \
++  void operator delete(void* mem);
+ 
+   // class definition for union zobject classes
+ #define zCLASS_UNION_DEFINITION( className, baseClassName, classFlags, archiveVersion )                                                         \
+@@ -153,10 +153,10 @@
+   // COLLISION INTERFACE
+   // class declaration for gothic api collision object classes
+ #define zCOLLISION_OBJECT_DECLARATION( className )                    \
+-    static zCCollisionObjectDef* className::S_GetCollObjClass(void) { \
++    static zCCollisionObjectDef* S_GetCollObjClass(void) { \
+       return className::s_oCollObjClass;                              \
+     };                                                                \
+-    static zCCollisionObjectDef* className::s_oCollObjClass; 
++    static zCCollisionObjectDef* s_oCollObjClass; 
+ 
+   // class declaration for union collision object classes
+ #define zCOLLISION_OBJECT_UNION_DECLARATION( className )                                                           \
+--- a/Gothic_I_Addon/API/zObject.h
++++ b/Gothic_I_Addon/API/zObject.h
+@@ -79,17 +79,7 @@
+   };
+ 
+   template<class T>
+-  T* zDYNAMIC_CAST( zCObject const* pObject ) {
+-    if( !pObject ) {
+-      return Null;
+-    }
+-    zCClassDef* pDef = pObject->_GetClassDef();
+-    if( zCObject::CheckInheritance( T::classDef, pDef ) ) {
+-      return (T*)pObject;
+-    }
+-    return dynamic_cast<T*>((zCObject*)pObject);
+-  }
+-
++  T* zDYNAMIC_CAST(zCObject const* pObject);
+   // sizeof 24h
+   class zCObject {
+   public:
+@@ -157,6 +147,26 @@
+     // user API
+     #include "zCObjectFactory.inl"
+   };
++
++  template<class T, class U>
++  T* zDYNAMIC_CAST(U* const pObject)
++  {
++      static_assert(std::is_base_of_v<zCObject, T> && std::is_base_of_v<zCObject, U>, "zCObject must be a base class of T and U");
++
++      if constexpr (&T::classDef != &U::classDef)
++      {
++          if (!pObject) {
++              return nullptr;
++          }
++
++          zCClassDef* pDef = pObject->_GetClassDef();
++          if (zCObject::CheckInheritance(T::classDef, pDef)) {
++              return static_cast<T*>(pObject);
++          }
++      }
++
++      return dynamic_cast<T*>(pObject);
++  }
+ } // namespace Gothic_I_Addon
+ 
+ #endif // __ZOBJECT_H__VER1__
+\ No newline at end of file
+--- a/Gothic_I_Addon/API/zSparseArray.h
++++ b/Gothic_I_Addon/API/zSparseArray.h
+@@ -106,19 +106,19 @@
+     }
+ 
+     Data *operator[] ( const zCSparseArrayIterator& iterator ) const { 
+-      return (Data *)DataPtr( iterator.T() ); 
++      return (Data *)DataPtr( iterator.count ); 
+     }
+ 
+     Data *IteratorData( const zCSparseArrayIterator& iterator ) const { 
+-      return (Data *)DataPtr( iterator.T() ); 
++      return (Data *)DataPtr( iterator.count ); 
+     }
+ 
+     T *IteratorIndex( const zCSparseArrayIterator& iterator ) const { 
+-      return (T *)IndexPtr( iterator.T() ); 
++      return (T *)IndexPtr( iterator.count ); 
+     }
+ 
+     void Delete( const zCSparseArrayIterator& iterator ) {
+-      Delete( *(T *)IndexPtr( iterator.T() )); 
++      Delete( *(T *)IndexPtr( iterator.count )); 
+     }
+ 
+     virtual unsigned long SizeIndex() const { 
+--- a/Gothic_I_Addon/API/zString.h
++++ b/Gothic_I_Addon/API/zString.h
+@@ -4,7 +4,7 @@
+ #define __ZSTRING_H__VER1__
+ 
+ #define USING_UNION_STRING_METHODS True
+-#define UNPROTECT_ZSTRING_METHODS  False
++#define UNPROTECT_ZSTRING_METHODS  True
+ 
+ namespace Gothic_I_Addon {
+ 
+--- a/Gothic_I_Classic/API/oNpc.h
++++ b/Gothic_I_Classic/API/oNpc.h
+@@ -377,7 +377,7 @@
+       oSActionBlock myactions[FA_MAX_SITUATIONS]; // sizeof 1DCh   offset 00h
+ 
+       oSFightAI() {}
+-    } oCNpc::oSFightAI;
++    } oSFightAI;
+ 
+     // sizeof CCh
+     typedef struct oSDamageDescriptor {
+--- a/Gothic_I_Classic/API/zAlgebra.h
++++ b/Gothic_I_Classic/API/zAlgebra.h
+@@ -57,6 +57,9 @@
+     ES
+   };
+ 
++  inline zMAT3 Alg_Scaling2D(zVEC2&);
++  inline zMAT3 Alg_Rotation2D(zVEC2&, float);
++
+   class zVEC2 {
+   public:
+     float n[2];
+@@ -692,13 +695,15 @@
+       );
+     }
+ 
++
+     friend inline zMAT3 Alg_Scaling2D( zVEC2& );
+     friend inline zMAT3 Alg_Rotation2D( zVEC2&, float );
+     zMAT3 ExtractRotation() const {
+       float a = v[1][0] * v[1][0];
+       float b = v[1][1] * v[1][1];
+       float angle = atan( SafeDiv( a, b ) );
+-      return Alg_Rotation2D( zVEC2( 0.0f ), angle * DEGREE );
++      zVEC2 zeroVec{ 0.f };
++      return Alg_Rotation2D(zeroVec, angle * DEGREE );
+     }
+ 
+     float ExtractAngle() const {
+@@ -1417,8 +1422,8 @@
+         zCLine2D line3 = line2.Dot( vx_multiplier );
+ 
+         float vy_mid = line3[VB][VY];
+-        float vy_min = min( line1[VA][VY], line1[VB][VY] );
+-        float vy_max = max( line1[VA][VY], line1[VB][VY] );
++        float vy_min = std::min( line1[VA][VY], line1[VB][VY] );
++        float vy_max = std::max( line1[VA][VY], line1[VB][VY] );
+ 
+         if( vy_mid >= vy_min && vy_mid <= vy_max ) {
+           if( intersec )
+--- a/Gothic_I_Classic/API/zContainer.h
++++ b/Gothic_I_Classic/API/zContainer.h
+@@ -4,6 +4,9 @@
+ #define __ZCONTAINER_H__VER0__
+ 
+ namespace Gothic_I_Classic {
++
++  extern zCMallocGeneric* zmalloc;
++
+   const int zARRAY_START_ALLOC = 16;
+   template <class T>
+   class zCArray {
+--- a/Gothic_I_Classic/API/zEngine.h
++++ b/Gothic_I_Classic/API/zEngine.h
+@@ -67,7 +67,7 @@
+ #if True
+   #ifdef __ZCON_B_VER0__
+     #define __Z2D_B_VER0__
+-    #include "zview.h"
++    #include "zView.h"
+     #include "zViewObject.h"
+     #include "zViewDraw.h"
+     #include "zViewFx.h"
+@@ -90,7 +90,7 @@
+     #include "oViewDialogItemContainer.h"
+     #include "oViewDialogStealContainer.h"
+     #include "oViewDialogTrade.h"
+-    #include "oViewStatusBar.h"
++    #include "oViewStatusbar.h"
+     #include "oDoc.h"
+     #include "oDocumentManager.h"
+     #include "oHelp.h"
+@@ -148,7 +148,7 @@
+     #include "zProgMesh.h"
+     #include "zVertexTransform.h"
+     #include "zPolyPool.h"
+-    #include "oVisFX.h"
++    #include "oVisFx.h"
+     #include "oVisFx_MultiTarget.h"
+     #include "oMagic.h"
+     #include "oMagFrontier.h"
+@@ -160,10 +160,10 @@
+ #if True
+   #ifdef __ZWLD_B_VER0__
+     #define __ZAI_B_VER0__
+-    #include "zAIPlayer.h"
++    #include "zAiPlayer.h"
+     #include "zPhysics.h"
+     #include "zMoving.h"
+-    #include "oAIShoot.h"
++    #include "oAiShoot.h"
+     #include "oDialog.h"
+     #include "oItemReact.h"
+     #include "oFocus.h"
+@@ -245,8 +245,8 @@
+   #ifdef __ZWLD_B_VER0__
+     #define __ZCS_B_VER0__
+     #include "zCCsPool.h"
+-    #include "oCSPlayer.h"
+-    #include "oCSManager.h"
++    #include "oCsPlayer.h"
++    #include "oCsManager.h"
+     #include "oCsProps.h"
+     #include "oCsTrigger.h"
+     #include "oTrigger.h"
+--- a/Gothic_I_Classic/API/zList.h
++++ b/Gothic_I_Classic/API/zList.h
+@@ -2,7 +2,7 @@
+ 
+ #ifndef __ZLIST_H__VER0__
+ #define __ZLIST_H__VER0__
+-
++#include <cassert>
+ #include "zContainer.h"
+ #include "zObject.h"
+ 
+@@ -598,7 +598,7 @@
+       int iIndex = static_cast<int> ( u32Hash );
+ 
+       if( TRUE == this->m_arrNodes.IsEmpty() )
+-        return GEFalse;
++        return False;
+ 
+       zSNode* pNode = this->m_arrNodes[iIndex];
+ 
+--- a/Gothic_I_Classic/API/zMacro.h
++++ b/Gothic_I_Classic/API/zMacro.h
+@@ -112,23 +112,23 @@
+ // class declaration for gothic api zobject classes
+ #define zCLASS_DECLARATION( className )                               \
+   static zCClassDef* classDef;                                        \
+-  void* className::operator new( size_t size ) {                      \
++  void* operator new( size_t size ) {                      \
+     void* mem = ::operator new( size );                               \
+   zCClassDef::ObjectCreated( (zCObject*)mem, className::classDef );   \
+   return mem;                                                         \
+   };                                                                  \
+-  void className::operator delete( void* mem ) {                      \
++  void operator delete( void* mem ) {                      \
+     zCClassDef::ObjectDeleted( (zCObject*)mem, className::classDef ); \
+     ::operator delete( mem );                                         \
+   };
+ 
+ // class declaration for union zobject classes
+ #define zCLASS_UNION_DECLARATION( className )                \
+-  static zCClassDef* className::classDef;                    \
+-  static zCObject* className::_CreateNewInstance( void );    \
+-  virtual zCClassDef* className::_GetClassDef( void ) const; \
+-  void* className::operator new(size_t size);                \
+-  void className::operator delete(void* mem);
++  static zCClassDef* classDef;                    \
++  static zCObject* _CreateNewInstance( void );    \
++  virtual zCClassDef* _GetClassDef( void ) const; \
++  void* operator new(size_t size);                \
++  void operator delete(void* mem);
+ 
+ // class definition for union zobject classes
+ #define zCLASS_UNION_DEFINITION( className, baseClassName, classFlags, archiveVersion )                                                         \
+@@ -153,10 +153,10 @@
+ // COLLISION INTERFACE
+ // class declaration for gothic api collision object classes
+ #define zCOLLISION_OBJECT_DECLARATION( className )                    \
+-    static zCCollisionObjectDef* className::S_GetCollObjClass(void) { \
++    static zCCollisionObjectDef* S_GetCollObjClass(void) { \
+       return className::s_oCollObjClass;                              \
+     };                                                                \
+-    static zCCollisionObjectDef* className::s_oCollObjClass; 
++    static zCCollisionObjectDef* s_oCollObjClass; 
+ 
+ // class declaration for union collision object classes
+ #define zCOLLISION_OBJECT_UNION_DECLARATION( className )                                                           \
+--- a/Gothic_I_Classic/API/zObject.h
++++ b/Gothic_I_Classic/API/zObject.h
+@@ -79,16 +79,7 @@
+   };
+ 
+   template<class T>
+-  T* zDYNAMIC_CAST( zCObject const* pObject ) {
+-    if( !pObject ) {
+-      return Null;
+-    }
+-    zCClassDef* pDef = pObject->_GetClassDef();
+-    if( zCObject::CheckInheritance( T::classDef, pDef ) ) {
+-      return (T*)pObject;
+-    }
+-    return dynamic_cast<T*>((zCObject*)pObject);
+-  }
++  T* zDYNAMIC_CAST(zCObject const* pObject);
+ 
+   // sizeof 24h
+   class zCObject {
+@@ -157,6 +148,26 @@
+     // user API
+     #include "zCObjectFactory.inl"
+   };
++
++  template<class T, class U>
++  T* zDYNAMIC_CAST(U* const pObject)
++  {
++      static_assert(std::is_base_of_v<zCObject, T> && std::is_base_of_v<zCObject, U>, "zCObject must be a base class of T and U");
++
++      if constexpr (&T::classDef != &U::classDef)
++      {
++          if (!pObject) {
++              return nullptr;
++          }
++
++          zCClassDef* pDef = pObject->_GetClassDef();
++          if (zCObject::CheckInheritance(T::classDef, pDef)) {
++              return static_cast<T*>(pObject);
++          }
++      }
++
++      return dynamic_cast<T*>(pObject);
++  }
+ } // namespace Gothic_I_Classic
+ 
+ #endif // __ZOBJECT_H__VER0__
+\ No newline at end of file
+--- a/Gothic_I_Classic/API/zSparseArray.h
++++ b/Gothic_I_Classic/API/zSparseArray.h
+@@ -104,19 +104,19 @@
+     }
+ 
+     Data *operator[] ( const zCSparseArrayIterator& iterator ) const { 
+-      return (Data *)DataPtr( iterator.T() ); 
++      return (Data *)DataPtr( iterator.count ); 
+     }
+ 
+     Data *IteratorData( const zCSparseArrayIterator& iterator ) const { 
+-      return (Data *)DataPtr( iterator.T() ); 
++      return (Data *)DataPtr( iterator.count ); 
+     }
+ 
+     T *IteratorIndex( const zCSparseArrayIterator& iterator ) const { 
+-      return (T *)IndexPtr( iterator.T() ); 
++      return (T *)IndexPtr( iterator.count ); 
+     }
+ 
+     void Delete( const zCSparseArrayIterator& iterator ) {
+-      Delete( *(T *)IndexPtr( iterator.T() )); 
++      Delete( *(T *)IndexPtr( iterator.count )); 
+     }
+ 
+     virtual unsigned long SizeIndex() const { 
+--- a/Gothic_I_Classic/API/zString.h
++++ b/Gothic_I_Classic/API/zString.h
+@@ -4,7 +4,7 @@
+ #define __ZSTRING_H__VER0__
+ 
+ #define USING_UNION_STRING_METHODS True
+-#define UNPROTECT_ZSTRING_METHODS  False
++#define UNPROTECT_ZSTRING_METHODS  True
+ 
+ namespace Gothic_I_Classic {
+ 
+--- a/Gothic_II_Addon/API/oNpc.h
++++ b/Gothic_II_Addon/API/oNpc.h
+@@ -424,7 +424,7 @@
+       oSFightAI() {}
+       void Init( zCParser*, int ) zCall( 0x0067C3C0 );
+       int GetOwnAction( int )     zCall( 0x0067C3F0 );
+-    } oCNpc::oSFightAI;
++    } oSFightAI;
+ 
+     // sizeof D4h
+     typedef struct oSDamageDescriptor {
+--- a/Gothic_II_Addon/API/zAlgebra.h
++++ b/Gothic_II_Addon/API/zAlgebra.h
+@@ -57,6 +57,9 @@
+     ES
+   };
+ 
++  inline zMAT3 Alg_Scaling2D(zVEC2&);
++  inline zMAT3 Alg_Rotation2D(zVEC2&, float);
++
+   class zVEC2 {
+   public:
+     float n[2];
+@@ -697,7 +700,8 @@
+       float a = v[1][0] * v[1][0];
+       float b = v[1][1] * v[1][1];
+       float angle = atan( SafeDiv( a, b ) );
+-      return Alg_Rotation2D( zVEC2( 0.0f ), angle * DEGREE );
++      zVEC2 zeroVec{0.f};
++      return Alg_Rotation2D( zeroVec, angle * DEGREE );
+     }
+ 
+     float ExtractAngle() const {
+@@ -1493,8 +1497,8 @@
+         zCLine2D line3 = line2.Dot( vx_multiplier );
+ 
+         float vy_mid = line3[VB][VY];
+-        float vy_min = min( line1[VA][VY], line1[VB][VY] );
+-        float vy_max = max( line1[VA][VY], line1[VB][VY] );
++        float vy_min = std::min( line1[VA][VY], line1[VB][VY] );
++        float vy_max = std::max( line1[VA][VY], line1[VB][VY] );
+ 
+         if( vy_mid >= vy_min && vy_mid <= vy_max ) {
+           if( intersec )
+--- a/Gothic_II_Addon/API/zContainer.h
++++ b/Gothic_II_Addon/API/zContainer.h
+@@ -4,6 +4,8 @@
+ #define __ZCONTAINER_H__VER3__
+ 
+ namespace Gothic_II_Addon {
++	extern zCMallocGeneric* zmalloc;
++
+   const int zARRAY_START_ALLOC = 16;
+ 
+   template <class T>
+--- a/Gothic_II_Addon/API/zEngine.h
++++ b/Gothic_II_Addon/API/zEngine.h
+@@ -65,7 +65,7 @@
+ #if True
+   #ifdef __ZCON_B_VER3__
+     #define __Z2D_B_VER3__
+-    #include "zview.h"
++    #include "zView.h"
+     #include "zViewObject.h"
+     #include "zViewDraw.h"
+     #include "zViewFx.h"
+@@ -89,7 +89,7 @@
+     #include "oViewDialogItemContainer.h"
+     #include "oViewDialogStealContainer.h"
+     #include "oViewDialogTrade.h"
+-    #include "oViewStatusBar.h"
++    #include "oViewStatusbar.h"
+     #include "oDoc.h"
+     #include "oDocumentManager.h"
+     #include "oHelp.h"
+@@ -141,7 +141,7 @@
+     #include "zProgMesh.h"
+     #include "zVertexTransform.h"
+     #include "zPolyPool.h"
+-    #include "oVisFX.h"
++    #include "oVisFx.h"
+     #include "oVisFx_MultiTarget.h"
+     #include "oMagic.h"
+     #include "oMagFrontier.h"
+@@ -154,10 +154,10 @@
+ #if True
+   #ifdef __ZWLD_B_VER3__
+     #define __ZAI_B_VER3__
+-    #include "zAIPlayer.h"
++    #include "zAiPlayer.h"
+     #include "zPhysics.h"
+     #include "zMoving.h"
+-    #include "oAIShoot.h"
++    #include "oAiShoot.h"
+     #include "oDialog.h"
+     #include "oItemReact.h"
+     #include "oFocus.h"
+@@ -238,8 +238,8 @@
+   #ifdef __ZWLD_B_VER3__
+     #define __ZCS_B_VER3__
+     #include "zCCsPool.h"
+-    #include "oCSPlayer.h"
+-    #include "oCSManager.h"
++    #include "oCsPlayer.h"
++    #include "oCsManager.h"
+     #include "oCsProps.h"
+     #include "oCsTrigger.h"
+     #include "oTrigger.h"
+--- a/Gothic_II_Addon/API/zList.h
++++ b/Gothic_II_Addon/API/zList.h
+@@ -5,6 +5,7 @@
+ 
+ #include "zContainer.h"
+ #include "zObject.h"
++#include <cassert>
+ 
+ namespace Gothic_II_Addon {
+ 
+@@ -601,7 +602,7 @@
+       int iIndex = static_cast<int> ( u32Hash );
+ 
+       if( True == this->m_arrNodes.IsEmpty() )
+-        return GEFalse;
++        return False;
+ 
+       zSNode* pNode = this->m_arrNodes[iIndex];
+ 
+--- a/Gothic_II_Addon/API/zMacro.h
++++ b/Gothic_II_Addon/API/zMacro.h
+@@ -112,23 +112,23 @@
+   // class declaration for gothic api zobject classes
+ #define zCLASS_DECLARATION( className )                               \
+   static zCClassDef* classDef;                                        \
+-  void* className::operator new( size_t size ) {                      \
++  void* operator new( size_t size ) {                      \
+     void* mem = ::operator new( size );                               \
+   zCClassDef::ObjectCreated( (zCObject*)mem, className::classDef );   \
+   return mem;                                                         \
+   };                                                                  \
+-  void className::operator delete( void* mem ) {                      \
++  void operator delete( void* mem ) {                      \
+     zCClassDef::ObjectDeleted( (zCObject*)mem, className::classDef ); \
+     ::operator delete( mem );                                         \
+   };
+ 
+   // class declaration for union zobject classes
+ #define zCLASS_UNION_DECLARATION( className )                \
+-  static zCClassDef* className::classDef;                    \
+-  static zCObject* className::_CreateNewInstance( void );    \
+-  virtual zCClassDef* className::_GetClassDef( void ) const; \
+-  void* className::operator new(size_t size);                \
+-  void className::operator delete(void* mem);
++  static zCClassDef* classDef;                    \
++  static zCObject* _CreateNewInstance( void );    \
++  virtual zCClassDef* _GetClassDef( void ) const; \
++  void* operator new(size_t size);                \
++  void operator delete(void* mem);
+ 
+   // class definition for union zobject classes
+ #define zCLASS_UNION_DEFINITION( className, baseClassName, classFlags, archiveVersion )                                                         \
+@@ -153,10 +153,10 @@
+   // COLLISION INTERFACE
+   // class declaration for gothic api collision object classes
+ #define zCOLLISION_OBJECT_DECLARATION( className )                    \
+-    static zCCollisionObjectDef* className::S_GetCollObjClass(void) { \
++    static zCCollisionObjectDef* S_GetCollObjClass(void) { \
+       return className::s_oCollObjClass;                              \
+     };                                                                \
+-    static zCCollisionObjectDef* className::s_oCollObjClass; 
++    static zCCollisionObjectDef* s_oCollObjClass; 
+ 
+   // class declaration for union collision object classes
+ #define zCOLLISION_OBJECT_UNION_DECLARATION( className )                                                           \
+--- a/Gothic_II_Addon/API/zObject.h
++++ b/Gothic_II_Addon/API/zObject.h
+@@ -79,17 +79,8 @@
+   };
+ 
+   template<class T>
+-  T* zDYNAMIC_CAST( zCObject const* pObject )
+-  {
+-    if( !pObject ) {
+-      return Null;
+-    }
+-    zCClassDef* pDef = pObject->_GetClassDef();
+-    if( zCObject::CheckInheritance( T::classDef, pDef )) {
+-      return (T*)pObject;
+-    }
+-    return dynamic_cast<T*>( (zCObject*)pObject );
+-  }
++  T* zDYNAMIC_CAST(zCObject const* pObject);
++ 
+ 
+   // sizeof 24h
+   class zCObject {
+@@ -161,6 +152,25 @@
+     #include "zCObjectFactory.inl"
+   };
+ 
++  template<class T, class U>
++  T* zDYNAMIC_CAST(U* const pObject)
++  {
++      static_assert(std::is_base_of_v<zCObject, T> && std::is_base_of_v<zCObject, U>, "zCObject must be a base class of T and U");
++
++      if constexpr (&T::classDef != &U::classDef)
++      {
++          if (!pObject) {
++              return nullptr;
++          }
++
++          zCClassDef* pDef = pObject->_GetClassDef();
++          if (zCObject::CheckInheritance(T::classDef, pDef)) {
++              return static_cast<T*>(pObject);
++          }
++      }
++
++      return dynamic_cast<T*>(pObject);
++  }
+   
+ } // namespace Gothic_II_Addon
+ 
+--- a/Gothic_II_Addon/API/zSparseArray.h
++++ b/Gothic_II_Addon/API/zSparseArray.h
+@@ -105,19 +105,19 @@
+     }
+ 
+     Data *operator[] ( const zCSparseArrayIterator& iterator ) const {
+-      return (Data *)DataPtr( iterator.T() );
++      return (Data *)DataPtr( iterator.count );
+     }
+ 
+     Data *IteratorData( const zCSparseArrayIterator& iterator ) const {
+-      return (Data *)DataPtr( iterator.T() );
++      return (Data *)DataPtr( iterator.count );
+     }
+ 
+     T *IteratorIndex( const zCSparseArrayIterator& iterator ) const {
+-      return (T *)IndexPtr( iterator.T() );
++      return (T *)IndexPtr( iterator.count );
+     }
+ 
+     void Delete( const zCSparseArrayIterator& iterator ) {
+-      Delete( *(T *)IndexPtr( iterator.T() ) );
++      Delete( *(T *)IndexPtr( iterator.count ) );
+     }
+ 
+     virtual unsigned long SizeIndex() const {
+--- a/Gothic_II_Addon/API/zString.h
++++ b/Gothic_II_Addon/API/zString.h
+@@ -4,7 +4,7 @@
+ #define __ZSTRING_H__VER3__
+ 
+ #define USING_UNION_STRING_METHODS True
+-#define UNPROTECT_ZSTRING_METHODS  False
++#define UNPROTECT_ZSTRING_METHODS  True
+ 
+ namespace Gothic_II_Addon {
+ 
+@@ -466,6 +466,7 @@
+     return zSTRING( s1 ) += s2;
+   }
+ 
++  /*
+   inline zSTRING& operator += ( zSTRING& s1, const zSTRING& s2 ) {
+     return s1.Put( s2, s1.Length() );
+   }
+@@ -488,7 +489,7 @@
+   // case Insensitive
+   inline bool_t operator != ( const zSTRING& s1, const char* s2 ) {
+     return !s1.CompareI( s2 );
+-  }
++  }*/
+ 
+ } // namespace Gothic_II_Addon
+ 
+--- a/Gothic_II_Classic/API/oNpc.h
++++ b/Gothic_II_Classic/API/oNpc.h
+@@ -414,7 +414,7 @@
+       oSFightAI() {}
+       void Init( zCParser*, int ) zCall( 0x00792FF0 );
+       int GetOwnAction( int )     zCall( 0x00793020 );
+-    } oCNpc::oSFightAI;
++    } oSFightAI;
+ 
+     // sizeof D0h
+     typedef struct oSDamageDescriptor {
+--- a/Gothic_II_Classic/API/zAlgebra.h
++++ b/Gothic_II_Classic/API/zAlgebra.h
+@@ -57,6 +57,9 @@
+     ES
+   };
+ 
++  inline zMAT3 Alg_Scaling2D(zVEC2&);
++  inline zMAT3 Alg_Rotation2D(zVEC2&, float);
++
+   class zVEC2 {
+   public:
+     float n[2];
+@@ -697,7 +700,8 @@
+       float a = v[1][0] * v[1][0];
+       float b = v[1][1] * v[1][1];
+       float angle = atan( SafeDiv( a, b ) );
+-      return Alg_Rotation2D( zVEC2( 0.0f ), angle * DEGREE );
++      zVEC2 zeroVec{ 0.f };
++      return Alg_Rotation2D(zeroVec, angle * DEGREE );
+     }
+ 
+     float ExtractAngle() const {
+@@ -1493,8 +1497,8 @@
+         zCLine2D line3 = line2.Dot( vx_multiplier );
+ 
+         float vy_mid = line3[VB][VY];
+-        float vy_min = min( line1[VA][VY], line1[VB][VY] );
+-        float vy_max = max( line1[VA][VY], line1[VB][VY] );
++        float vy_min = std::min( line1[VA][VY], line1[VB][VY] );
++        float vy_max = std::max( line1[VA][VY], line1[VB][VY] );
+ 
+         if( vy_mid >= vy_min && vy_mid <= vy_max ) {
+           if( intersec )
+--- a/Gothic_II_Classic/API/zContainer.h
++++ b/Gothic_II_Classic/API/zContainer.h
+@@ -5,7 +5,7 @@
+ 
+ namespace Gothic_II_Classic {
+   const int zARRAY_START_ALLOC = 16;
+-
++  extern zCMallocGeneric* zmalloc;
+   template <class T>
+   class zCArray {
+   protected:
+--- a/Gothic_II_Classic/API/zEngine.h
++++ b/Gothic_II_Classic/API/zEngine.h
+@@ -72,7 +72,7 @@
+ #if True
+   #ifdef __ZCON_B_VER2__
+     #define __Z2D_B_VER2__
+-    #include "zview.h"
++    #include "zView.h"
+     #include "zViewObject.h"
+     #include "zViewDraw.h"
+     #include "zViewFx.h"
+@@ -96,7 +96,7 @@
+     #include "oViewDialogItemContainer.h"
+     #include "oViewDialogStealContainer.h"
+     #include "oViewDialogTrade.h"
+-    #include "oViewStatusBar.h"
++    #include "oViewStatusbar.h"
+     #include "oDoc.h"
+     #include "oDocumentManager.h"
+     #include "oHelp.h"
+@@ -156,7 +156,7 @@
+     #include "zProgMesh.h"
+     #include "zVertexTransform.h"
+     #include "zPolyPool.h"
+-    #include "oVisFX.h"
++    #include "oVisFx.h"
+     #include "oVisFx_MultiTarget.h"
+     #include "oMagic.h"
+     #include "oMagFrontier.h"
+@@ -169,10 +169,10 @@
+ #if True
+   #ifdef __ZWLD_B_VER2__
+     #define __ZAI_B_VER2__
+-    #include "zAIPlayer.h"
++    #include "zAiPlayer.h"
+     #include "zPhysics.h"
+     #include "zMoving.h"
+-    #include "oAIShoot.h"
++    #include "oAiShoot.h"
+     #include "oDialog.h"
+     #include "oItemReact.h"
+     #include "oFocus.h"
+@@ -257,8 +257,8 @@
+   #ifdef __ZWLD_B_VER2__
+     #define __ZCS_B_VER2__
+     #include "zCCsPool.h"
+-    #include "oCSPlayer.h"
+-    #include "oCSManager.h"
++    #include "oCsPlayer.h"
++    #include "oCsManager.h"
+     #include "oCsProps.h"
+     #include "oCsTrigger.h"
+     #include "oTrigger.h"
+--- a/Gothic_II_Classic/API/zList.h
++++ b/Gothic_II_Classic/API/zList.h
+@@ -601,7 +601,7 @@
+       int iIndex = static_cast<int> ( u32Hash );
+ 
+       if( True == this->m_arrNodes.IsEmpty() )
+-        return GEFalse;
++        return False;
+ 
+       zSNode* pNode = this->m_arrNodes[iIndex];
+ 
+--- a/Gothic_II_Classic/API/zMacro.h
++++ b/Gothic_II_Classic/API/zMacro.h
+@@ -112,23 +112,23 @@
+ // class declaration for gothic api zobject classes
+ #define zCLASS_DECLARATION( className )                               \
+   static zCClassDef* classDef;                                        \
+-  void* className::operator new( size_t size ) {                      \
++  void* operator new( size_t size ) {                      \
+     void* mem = ::operator new( size );                               \
+   zCClassDef::ObjectCreated( (zCObject*)mem, className::classDef );   \
+   return mem;                                                         \
+   };                                                                  \
+-  void className::operator delete( void* mem ) {                      \
++  void operator delete( void* mem ) {                      \
+     zCClassDef::ObjectDeleted( (zCObject*)mem, className::classDef ); \
+     ::operator delete( mem );                                         \
+   };
+ 
+   // class declaration for union zobject classes
+ #define zCLASS_UNION_DECLARATION( className )                \
+-  static zCClassDef* className::classDef;                    \
+-  static zCObject* className::_CreateNewInstance( void );    \
+-  virtual zCClassDef* className::_GetClassDef( void ) const; \
+-  void* className::operator new(size_t size);                \
+-  void className::operator delete(void* mem);
++  static zCClassDef* classDef;                    \
++  static zCObject* _CreateNewInstance( void );    \
++  virtual zCClassDef* _GetClassDef( void ) const; \
++  void* operator new(size_t size);                \
++  void operator delete(void* mem);
+ 
+ // class definition for union zobject classes
+ #define zCLASS_UNION_DEFINITION( className, baseClassName, classFlags, archiveVersion )                                                         \
+@@ -153,10 +153,10 @@
+ // COLLISION INTERFACE
+ // class declaration for gothic api collision object classes
+ #define zCOLLISION_OBJECT_DECLARATION( className )                    \
+-    static zCCollisionObjectDef* className::S_GetCollObjClass(void) { \
++    static zCCollisionObjectDef* S_GetCollObjClass(void) { \
+       return className::s_oCollObjClass;                              \
+     };                                                                \
+-    static zCCollisionObjectDef* className::s_oCollObjClass; 
++    static zCCollisionObjectDef* s_oCollObjClass; 
+ 
+ 
+ // class declaration for union collision object classes
+--- a/Gothic_II_Classic/API/zObject.h
++++ b/Gothic_II_Classic/API/zObject.h
+@@ -80,17 +80,7 @@
+   };
+ 
+   template<class T>
+-  T* zDYNAMIC_CAST( zCObject const* pObject )
+-  {
+-    if( !pObject ) {
+-      return Null;
+-    }
+-    zCClassDef* pDef = pObject->_GetClassDef();
+-    if( zCObject::CheckInheritance( T::classDef, pDef )) {
+-      return (T*)pObject;
+-    }
+-    return dynamic_cast<T*>( (zCObject*)pObject );
+-  }
++  T* zDYNAMIC_CAST(zCObject const* pObject);
+ 
+   // sizeof 24h
+   class zCObject {
+@@ -160,6 +150,26 @@
+     #include "zCObjectFactory.inl"
+   };
+ 
++  template<class T, class U>
++  T* zDYNAMIC_CAST(U* const pObject)
++  {
++      static_assert(std::is_base_of_v<zCObject, T> && std::is_base_of_v<zCObject, U>, "zCObject must be a base class of T and U");
++
++      if constexpr (&T::classDef != &U::classDef)
++      {
++          if (!pObject) {
++              return nullptr;
++          }
++
++          zCClassDef* pDef = pObject->_GetClassDef();
++          if (zCObject::CheckInheritance(T::classDef, pDef)) {
++              return static_cast<T*>(pObject);
++          }
++      }
++
++      return dynamic_cast<T*>(pObject);
++  }
++
+ } // namespace Gothic_II_Classic
+ 
+ #endif // __ZOBJECT_H__VER2__
+\ No newline at end of file
+--- a/Gothic_II_Classic/API/zSparseArray.h
++++ b/Gothic_II_Classic/API/zSparseArray.h
+@@ -105,19 +105,19 @@
+     }
+ 
+     Data *operator[] ( const zCSparseArrayIterator& iterator ) const {
+-      return (Data *)DataPtr( iterator.T() );
++      return (Data *)DataPtr( iterator.count );
+     }
+ 
+     Data *IteratorData( const zCSparseArrayIterator& iterator ) const {
+-      return (Data *)DataPtr( iterator.T() );
++      return (Data *)DataPtr( iterator.count );
+     }
+ 
+     T *IteratorIndex( const zCSparseArrayIterator& iterator ) const {
+-      return (T *)IndexPtr( iterator.T() );
++      return (T *)IndexPtr( iterator.count );
+     }
+ 
+     void Delete( const zCSparseArrayIterator& iterator ) {
+-      Delete( *(T *)IndexPtr( iterator.T() ) );
++      Delete( *(T *)IndexPtr( iterator.count ) );
+     }
+ 
+     virtual unsigned long SizeIndex() const {
+--- a/Gothic_II_Classic/API/zString.h
++++ b/Gothic_II_Classic/API/zString.h
+@@ -4,7 +4,7 @@
+ #define __ZSTRING_H__VER2__
+ 
+ #define USING_UNION_STRING_METHODS True
+-#define UNPROTECT_ZSTRING_METHODS  False
++#define UNPROTECT_ZSTRING_METHODS  True
+ 
+ namespace Gothic_II_Classic {
+   inline void CreateDirectories( CStringA path ) {
+--- a/Gothic_UserAPI/oCAIHuman.inl
++++ b/Gothic_UserAPI/oCAIHuman.inl
+@@ -3,3 +3,4 @@
+ // User API for oCAIHuman
+ // Add your methods here
+ 
++void DoAI_Union(zCVob*, int&);
+--- a/Gothic_UserAPI/oCDocumentManager.inl
++++ b/Gothic_UserAPI/oCDocumentManager.inl
+@@ -3,3 +3,4 @@
+ // User API for oCDocumentManager
+ // Add your methods here
+ 
++void __fastcall Show_Union(int);
+\ No newline at end of file
+--- a/Gothic_UserAPI/oCMobContainer.inl
++++ b/Gothic_UserAPI/oCMobContainer.inl
+@@ -3,3 +3,4 @@
+ // User API for oCMobContainer
+ // Add your methods here
+ 
++bool IsEmpty_Union();
+\ No newline at end of file
+--- a/Gothic_UserAPI/oCMobInter.inl
++++ b/Gothic_UserAPI/oCMobInter.inl
+@@ -3,3 +3,4 @@
+ // User API for oCMobInter
+ // Add your methods here
+ 
++void StartStateChange_Union(oCNpc*, int, int);
+--- a/Gothic_UserAPI/oCNpc.inl
++++ b/Gothic_UserAPI/oCNpc.inl
+@@ -3,3 +3,8 @@
+ // User API for oCNpc
+ // Add your methods here
+ 
++bool CanBeLooted_Union();
++int GetAivar_Union(const zSTRING&);
++bool HaveItem_Union(const zSTRING&);
++void ProcessNpc_Union();
++void DoDie_Union(oCNpc*);
+--- a/Gothic_UserAPI/oCNpc_States.inl
++++ b/Gothic_UserAPI/oCNpc_States.inl
+@@ -3,3 +3,4 @@
+ // User API for oCNpc_States
+ // Add your methods here
+ 
++int DoAIState_Union();
+--- a/Gothic_UserAPI/oCSpell.inl
++++ b/Gothic_UserAPI/oCSpell.inl
+@@ -3,3 +3,4 @@
+ // User API for oCSpell
+ // Add your methods here
+ 
++void CallScriptInvestedMana_Union();
+--- a/Gothic_UserAPI/zCConsole.inl
++++ b/Gothic_UserAPI/zCConsole.inl
+@@ -3,3 +3,4 @@
+ // User API for zCConsole
+ // Add your methods here
+ 
++int Evaluate_Union(zSTRING const&);
+--- a/Gothic_UserAPI/zCEventManager.inl
++++ b/Gothic_UserAPI/zCEventManager.inl
+@@ -3,3 +3,4 @@
+ // User API for zCEventManager
+ // Add your methods here
+ 
++void ProcessMessageList_Union();
+--- a/Gothic_UserAPI/zCViewFX.inl
++++ b/Gothic_UserAPI/zCViewFX.inl
+@@ -2,4 +2,3 @@
+ 
+ // User API for zCViewFX
+ // Add your methods here
+-
+--- a/Gothic_UserAPI/zCVob.inl
++++ b/Gothic_UserAPI/zCVob.inl
+@@ -3,3 +3,7 @@
+ // User API for zCVob
+ // Add your methods here
+ 
++bool IsValidNpc_Union();
++bool IsValidItem_Union();
++bool IsValidInteractiveOrContainer_Union();
++zVEC3 GetRealPosition_Union();
+\ No newline at end of file

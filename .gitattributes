@@ -1,0 +1,3 @@
+# Keep every file byte-for-byte: sources mix UTF-8 and cp1250, the ZenGin patches carry CRLF lines.
+* -text
+*.ico binary
